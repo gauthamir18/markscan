@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException
 import shutil
 from pathlib import Path
 from uuid import uuid4
-
+from app.services.field_extractor import extract_fields
 from app.services.image_processor import process_image
 from app.services.ocr import extract_text
 
@@ -36,12 +36,13 @@ async def upload_image(file: UploadFile = File(...)):
         shutil.copyfileobj(file.file, buffer)
 
     processed_path = process_image(str(file_path))
+    field_images = extract_fields(processed_path)
 
-    ocr_text = extract_text(processed_path)
+    #ocr_text = extract_text(processed_path)
 
     return {
         "status": "success",
         "filename": unique_filename,
         "processed_image": processed_path,
-        "ocr": ocr_text
+        "fields": field_images
     }

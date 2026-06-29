@@ -1,24 +1,18 @@
-# Flutter
-frontend/build/
-frontend/.dart_tool/
-frontend/.packages
-frontend/.flutter-plugins
-frontend/.flutter-plugins-dependencies
-
 # Python
-backend/__pycache__/
-*.pyc
-.venv/
-venv/
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual Environment
+backend/venv/
+
+# Environment Variables
+backend/.env
+
+# Temporary Images
+backend/uploads/
+backend/processed/
+backend/fields/
 
 # macOS
 .DS_Store
-
-# VS Code
-.vscode/
-
-# Environment Variables
-.env
-
-# Logs
-*.log
