@@ -1,13 +1,39 @@
 FIELDS = {
-    "student_name": (410, 250, 495, 520),
 
-    "class": (330, 250, 405, 430),
+    # Entire Name value cell
+    "student_name": (
+        395, 180,
+        498, 610
+    ),
 
-    "subject": (245, 250, 325, 430),
+    # Entire Class value cell
+    "class": (
+        315, 180,
+        395, 470
+    ),
 
-    "qp_code": (160, 250, 240, 520),
+    # Entire Subject value cell
+    "subject": (
+        235, 180,
+        315, 470
+    ),
 
-    "date": (410, 250, 495, 430),
+    # Entire QP Code value cell
+    "qp_code": (
+        145, 180,
+        235, 610
+    ),
 
-    "marks": (320, 760, 495, 980),
+    # Entire Date value cell
+    "date": (
+        395, 610,
+        498, 987
+    ),
+
+    # Entire Marks value cell
+    "marks": (
+        235, 470,
+        498, 987
+    )
+
 }

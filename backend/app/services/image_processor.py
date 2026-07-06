@@ -1,7 +1,5 @@
 import cv2
 from pathlib import Path
-from app.services.document_scanner import scan_document
-
 
 PROCESSED_DIR = Path("processed")
 PROCESSED_DIR.mkdir(exist_ok=True)
@@ -15,15 +13,13 @@ def process_image(image_path: str):
     if image is None:
         raise Exception("Unable to read image")
 
-    # Step 1 - Rotate if needed
-    image = scan_document(image)
-    # Step 2 - Convert to Grayscale
+    # Convert to Grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    # Step 3 - Remove Noise
+    # Remove Noise
     denoised = cv2.GaussianBlur(gray, (5, 5), 0)
 
-    # Step 4 - Adaptive Threshold
+    # Adaptive Threshold
     threshold = cv2.adaptiveThreshold(
         denoised,
         255,
@@ -39,4 +35,3 @@ def process_image(image_path: str):
     cv2.imwrite(str(output_path), threshold)
 
     return str(output_path)
-  
