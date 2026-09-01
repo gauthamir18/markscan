@@ -16,3 +16,44 @@ backend/fields/
 
 # macOS
 .DS_Store
+# Python virtual environments
+backend/venv/
+backend/venv_old/
+backend/venv_broken/
+yolo-env/
+labelstudio-env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Flutter/Dart
+frontend/.dart_tool/
+frontend/build/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.metadata
+
+# IDE / OS
+.DS_Store
+
+# Runtime/generated files
+backend/uploads/
+backend/processed/
+runs/
+
+# Local secrets
+.env
+backend/.env
+
+# Large/local backups and generated ML files
+frontend/android_backup/
+project-1-at-2026-08-22-10-14-f8badadd.zip
+
+# Flutter generated/build files
+frontend/build/
+frontend/.dart_tool/
+
+# Python/ML environments
+yolo-env/
+labelstudio-env/
