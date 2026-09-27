@@ -9,10 +9,7 @@ load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")
 
 PREFERRED_MODELS = [
     "gemini-3.1-flash-lite",
-    "gemini-3.5-flash-lite",
-    "gemini-3.5-flash",
     "gemini-3.8-flash",
-    "gemini-flash-latest",
 ]
 
 
@@ -91,12 +88,13 @@ Do NOT include markdown formatting outside the JSON object.
 
         from google.genai import types
 
+        mime_type = "image/png" if str(seal_image_path).lower().endswith(".png") else "image/jpeg"
         for model_name in PREFERRED_MODELS:
             try:
                 response = client.models.generate_content(
                     model=model_name,
                     contents=[
-                        types.Part.from_bytes(data=image_data, mime_type="image/jpeg"),
+                        types.Part.from_bytes(data=image_data, mime_type=mime_type),
                         prompt,
                     ],
                 )
