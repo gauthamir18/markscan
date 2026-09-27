@@ -88,6 +88,25 @@ def auto_bootstrap_database():
                         db.add(st)
                 db.commit()
                 print(f"🌱 Auto-seeded {db.query(FakeStudent).count()} students from students.csv")
+
+        # 3. Bootstrap Tests from CSV if table is empty
+        from app.models.test import Test
+        if db.query(Test).count() == 0:
+            tests_csv_path = Path(__file__).resolve().parent.parent / "data" / "tests.csv"
+            if tests_csv_path.exists():
+                with open(tests_csv_path, mode="r", encoding="utf-8-sig") as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        t = Test(
+                            test_code=row.get("test_code") or "",
+                            test_name=row.get("test_name") or "",
+                            subject_name=row.get("subject_name") or "",
+                            class_name=row.get("class_name") or "",
+                            max_marks=float(row.get("max_marks") or 35.0),
+                        )
+                        db.add(t)
+                db.commit()
+                print(f"🌱 Auto-seeded {db.query(Test).count()} tests from tests.csv")
     except Exception as e:
         print(f"⚠️ Bootstrapping warning: {e}")
         db.rollback()
