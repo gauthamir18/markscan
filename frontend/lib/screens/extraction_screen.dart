@@ -45,6 +45,7 @@ class _ExtractionScreenState extends State<ExtractionScreen> {
   String? totalMarks;
   bool visionAiUsed = false;
   int? markId;
+  int rotationTurns = 0;
 
   @override
   void initState() {
@@ -263,48 +264,83 @@ class _ExtractionScreenState extends State<ExtractionScreen> {
                           color: darkBlue,
                         ),
                       )
-                    : Image.network(
-                        sealImageUrl!,
-                        fit: BoxFit.contain,
-                        loadingBuilder: (
-                          context,
-                          child,
-                          loadingProgress,
-                        ) {
-                          if (loadingProgress == null) {
-                            return child;
-                          }
+                    : Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Center(
+                            child: RotatedBox(
+                              quarterTurns: rotationTurns,
+                              child: Image.network(
+                                sealImageUrl!,
+                                fit: BoxFit.contain,
+                                loadingBuilder: (
+                                  context,
+                                  child,
+                                  loadingProgress,
+                                ) {
+                                  if (loadingProgress == null) {
+                                    return child;
+                                  }
 
-                          return const Center(
-                            child: CircularProgressIndicator(
-                              color: darkBlue,
-                            ),
-                          );
-                        },
-                        errorBuilder: (
-                          context,
-                          error,
-                          stackTrace,
-                        ) {
-                          return const Column(
-                            mainAxisAlignment:
-                                MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.image_outlined,
-                                size: 55,
-                                color: Colors.grey,
+                                  return const Center(
+                                    child: CircularProgressIndicator(
+                                      color: darkBlue,
+                                    ),
+                                  );
+                                },
+                                errorBuilder: (
+                                  context,
+                                  error,
+                                  stackTrace,
+                                ) {
+                                  return const Column(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.center,
+                                    children: [
+                                      Icon(
+                                        Icons.image_outlined,
+                                        size: 55,
+                                        color: Colors.grey,
+                                      ),
+                                      SizedBox(height: 8),
+                                      Text(
+                                        'Unable to load cropped seal',
+                                        style: TextStyle(
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
                               ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Unable to load cropped seal',
-                                style: TextStyle(
-                                  color: Colors.grey,
+                            ),
+                          ),
+                          Positioned(
+                            top: 8,
+                            right: 8,
+                            child: Material(
+                              color: Colors.white.withOpacity(0.85),
+                              shape: const CircleBorder(),
+                              elevation: 2,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(20),
+                                onTap: () {
+                                  setState(() {
+                                    rotationTurns = (rotationTurns + 1) % 4;
+                                  });
+                                },
+                                child: const Padding(
+                                  padding: EdgeInsets.all(7.0),
+                                  child: Icon(
+                                    Icons.rotate_right_rounded,
+                                    color: darkBlue,
+                                    size: 22,
+                                  ),
                                 ),
                               ),
-                            ],
-                          );
-                        },
+                            ),
+                          ),
+                        ],
                       ),
               ),
             ),
