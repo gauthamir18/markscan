@@ -340,8 +340,8 @@ def upload_image(
         "marks": final_marks_str,
         "total": final_total_str,
         "vision_ai_used": vision_ai_used,
-        "vision_model": hybrid_res.get("vision_model", ""),
-        "vision_reasoning": hybrid_res.get("vision_reasoning", ""),
+        "vision_model": vision_model,
+        "vision_reasoning": vision_reasoning,
         "fields": {
             "name": {
                 "text": final_display_name,
