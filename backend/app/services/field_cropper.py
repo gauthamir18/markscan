@@ -19,10 +19,19 @@ TEMPLATE_KEYWORDS = {"name", "date", "class", "board", "subject", "marks", "mark
 
 def detect_upright_rotation(image):
     """
-    Tests 4 orientations (0, 90, 180, 270) and picks the one matching the printed template.
+    Ensures seal is in landscape orientation for template cropping.
+    Avoids loading heavy EasyOCR models when Vision AI is active.
     """
-    from app.services.ocr import get_easyocr_reader
-    reader = get_easyocr_reader()
+    if image is None:
+        return image
+
+    h, w = image.shape[:2]
+    if h > w:
+        return cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
+
+    import os
+    if os.getenv("GEMINI_API_KEY") or os.getenv("DISABLE_LOCAL_OCR") == "1":
+        return image
 
     rotations = [
         (0, image),
@@ -40,19 +49,24 @@ def detect_upright_rotation(image):
     best_img = image
     best_score = -1
 
-    if reader is not None:
-        for deg, r in landscape_candidates:
-            thumb = cv2.resize(r, (500, 250), interpolation=cv2.INTER_AREA)
-            try:
-                detections = reader.readtext(thumb, detail=0)
-                words = [w.lower() for w in detections]
-                score = sum(1 for w in words for kw in TEMPLATE_KEYWORDS if kw in w)
-                if score > best_score:
-                    best_score = score
-                    best_deg = deg
-                    best_img = r
-            except Exception:
-                continue
+    try:
+        from app.services.ocr import get_easyocr_reader
+        reader = get_easyocr_reader()
+        if reader is not None:
+            for deg, r in landscape_candidates:
+                thumb = cv2.resize(r, (500, 250), interpolation=cv2.INTER_AREA)
+                try:
+                    detections = reader.readtext(thumb, detail=0)
+                    words = [w.lower() for w in detections]
+                    score = sum(1 for w in words for kw in TEMPLATE_KEYWORDS if kw in w)
+                    if score > best_score:
+                        best_score = score
+                        best_deg = deg
+                        best_img = r
+                except Exception:
+                    continue
+    except Exception:
+        pass
 
     print(f"[AutoOrient] Selected rotation: {best_deg} deg (keyword matches: {best_score})")
     return best_img

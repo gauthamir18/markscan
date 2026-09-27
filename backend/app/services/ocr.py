@@ -37,6 +37,9 @@ _easyocr_reader = None
 
 def get_easyocr_reader():
     global _easyocr_reader
+    # In cloud environments or when Vision AI is active, skip loading heavy EasyOCR models to save RAM
+    if os.getenv("DISABLE_LOCAL_OCR") == "1" or os.getenv("GEMINI_API_KEY"):
+        return None
     if _easyocr_reader is None:
         try:
             import easyocr
