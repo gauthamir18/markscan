@@ -5,8 +5,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database.connection import get_db
-from app.models.fake_student import FakeStudent
-from app.models.fake_mark import FakeMark
+from app.models.student import Student
+from app.models.mark import Mark
 from app.models.test import Test
 
 router = APIRouter(
@@ -42,21 +42,21 @@ def get_class_marks(
 
     # 2. Fetch all students for this class and board
     students = (
-        db.query(FakeStudent)
+        db.query(Student)
         .filter(
-            FakeStudent.class_name == cls_clean,
-            FakeStudent.board.ilike(f"%{board_clean}%"),
+            Student.class_name == cls_clean,
+            Student.board.ilike(f"%{board_clean}%"),
         )
-        .order_by(FakeStudent.name.asc())
+        .order_by(Student.name.asc())
         .all()
     )
 
     if not students:
         # Fallback without trailing spaces or case differences
         all_students = (
-            db.query(FakeStudent)
-            .filter(FakeStudent.class_name == cls_clean)
-            .order_by(FakeStudent.name.asc())
+            db.query(Student)
+            .filter(Student.class_name == cls_clean)
+            .order_by(Student.name.asc())
             .all()
         )
         students = [
@@ -66,9 +66,9 @@ def get_class_marks(
 
     # 3. Query fake_marks for this test code
     marks_entries = (
-        db.query(FakeMark)
-        .filter(FakeMark.test_code.ilike(test_code_clean))
-        .order_by(FakeMark.id.desc())
+        db.query(Mark)
+        .filter(Mark.test_code.ilike(test_code_clean))
+        .order_by(Mark.id.desc())
         .all()
     )
 
@@ -136,18 +136,18 @@ def update_mark(
     req: MarkUpdateRequest,
     db: Session = Depends(get_db),
 ):
-    student = db.query(FakeStudent).filter(FakeStudent.id == req.student_id).first()
+    student = db.query(Student).filter(Student.id == req.student_id).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
     # Find existing mark record for this student and test
     existing = (
-        db.query(FakeMark)
+        db.query(Mark)
         .filter(
-            FakeMark.student_id == req.student_id,
-            FakeMark.test_code.ilike(req.test_code.strip())
+            Mark.student_id == req.student_id,
+            Mark.test_code.ilike(req.test_code.strip())
         )
-        .order_by(FakeMark.id.desc())
+        .order_by(Mark.id.desc())
         .first()
     )
 
@@ -160,7 +160,7 @@ def update_mark(
             db.refresh(existing)
             mark_obj = existing
         else:
-            mark_obj = FakeMark(
+            mark_obj = Mark(
                 student_id=req.student_id,
                 matched_name=student.name,
                 test_code=req.test_code.strip(),
@@ -183,7 +183,7 @@ def update_mark(
             db.refresh(existing)
             mark_obj = existing
         else:
-            mark_obj = FakeMark(
+            mark_obj = Mark(
                 student_id=req.student_id,
                 matched_name=student.name,
                 test_code=req.test_code.strip(),

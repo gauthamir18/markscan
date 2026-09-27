@@ -8,8 +8,8 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from sqlalchemy.orm import Session
 
 from app.database.connection import SessionLocal
-from app.models.fake_mark import FakeMark
-from app.models.fake_student import FakeStudent
+from app.models.mark import Mark
+from app.models.student import Student
 from app.services.image_processor import process_image
 from app.services.seal_detector import detect_seal
 from app.services.field_cropper import crop_fields
@@ -275,7 +275,7 @@ def upload_image(
 
     # 5. Save safely to fake_marks table (leaving real marks table intact)
     try:
-        fake_entry = FakeMark(
+        fake_entry = Mark(
             student_id=final_student.id if final_student else None,
             raw_ocr_name=raw_ocr_name,
             matched_name=final_display_name,
@@ -366,7 +366,7 @@ def confirm_mark(
     db: Session = Depends(get_db)
 ):
     if mark_id:
-        entry = db.query(FakeMark).filter(FakeMark.id == mark_id).first()
+        entry = db.query(Mark).filter(Mark.id == mark_id).first()
         if entry:
             if student_name and student_name.strip():
                 entry.matched_name = student_name.strip()
@@ -411,7 +411,7 @@ def submit_batch(
     for it in payload.items:
         entry = None
         if it.mark_id:
-            entry = db.query(FakeMark).filter(FakeMark.id == it.mark_id).first()
+            entry = db.query(Mark).filter(Mark.id == it.mark_id).first()
 
         obtained = None
         if it.marks:
@@ -429,9 +429,9 @@ def submit_batch(
 
         st = None
         if it.student_id:
-            st = db.query(FakeStudent).filter(FakeStudent.id == it.student_id).first()
+            st = db.query(Student).filter(Student.id == it.student_id).first()
         if st is None and it.student_name:
-            st = db.query(FakeStudent).filter(FakeStudent.name.ilike(it.student_name.strip())).first()
+            st = db.query(Student).filter(Student.name.ilike(it.student_name.strip())).first()
 
         if entry:
             entry.matched_name = it.student_name.strip()
@@ -445,7 +445,7 @@ def submit_batch(
             entry.status = "SUBMITTED"
             submitted_count += 1
         else:
-            new_entry = FakeMark(
+            new_entry = Mark(
                 student_id=st.id if st else None,
                 matched_name=it.student_name.strip(),
                 test_code=it.test_code.strip(),

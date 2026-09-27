@@ -1,14 +1,14 @@
 import os
 from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session
-from app.models.fake_student import FakeStudent
+from app.models.student import Student
 from app.services.gemini_reader import analyze_seal_vision
 from app.services.student_matcher import clean_ocr_name
 
 def decide_hybrid(
     seal_image_path: str,
     yolo_confidence: float,
-    local_student: Optional[FakeStudent],
+    local_student: Optional[Student],
     local_score: float,
     local_display_name: str,
     top_candidates: List[Dict[str, Any]],
@@ -56,16 +56,16 @@ def decide_hybrid(
                 # Direct check against top candidates
                 for c in top_candidates:
                     if c["name"].lower() == v_name.lower():
-                        matched_db_student = db.query(FakeStudent).filter(FakeStudent.id == c["id"]).first()
+                        matched_db_student = db.query(Student).filter(Student.id == c["id"]).first()
                         break
                 
                 # Broad check against database
                 if matched_db_student is None:
-                    matched_db_student = db.query(FakeStudent).filter(FakeStudent.name.ilike(v_name)).first()
+                    matched_db_student = db.query(Student).filter(Student.name.ilike(v_name)).first()
                 if matched_db_student is None:
                     # Check first name token
                     first_tok = v_name.split()[0]
-                    matched_db_student = db.query(FakeStudent).filter(FakeStudent.name.ilike(f"%{first_tok}%")).first()
+                    matched_db_student = db.query(Student).filter(Student.name.ilike(f"%{first_tok}%")).first()
 
             if matched_db_student is not None:
                 final_student = matched_db_student

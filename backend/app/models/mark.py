@@ -1,5 +1,5 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
-
+from datetime import datetime
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime
 from app.database.base import Base
 
 
@@ -11,25 +11,32 @@ class Mark(Base):
     student_id = Column(
         Integer,
         ForeignKey("students.id"),
-        nullable=False,
-    )
-
-    test_id = Column(
-        Integer,
-        ForeignKey("tests.id"),
-        nullable=False,
-    )
-
-    session_id = Column(
-        Integer,
-        ForeignKey("scan_sessions.id"),
         nullable=True,
     )
 
-    marks = Column(Integer, nullable=False)
+    raw_ocr_name = Column(String, nullable=True)
+    matched_name = Column(String, nullable=True)
+    match_confidence = Column(Float, nullable=True)
+
+    test_code = Column(String, nullable=True)
+
+    raw_ocr_marks = Column(String, nullable=True)
+    marks_obtained = Column(Float, nullable=True)
+    total_marks = Column(Float, nullable=True)
+
+    seal_image_url = Column(String, nullable=True)
 
     status = Column(
         String,
         nullable=False,
         default="SCANNED",
     )
+
+    created_at = Column(
+        DateTime,
+        default=datetime.utcnow,
+    )
+
+
+# Backward compatibility alias
+FakeMark = Mark

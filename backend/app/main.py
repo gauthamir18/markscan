@@ -20,9 +20,6 @@ from app.models.student import Student
 from app.models.faculty import Faculty
 from app.models.test import Test
 from app.models.mark import Mark
-from app.models.fake_mark import FakeMark
-from app.models.fake_student import FakeStudent
-from app.models.scan_session import ScanSession
 
 Base.metadata.create_all(bind=engine)
 print("✅ PostgreSQL connected & schema ready.")
@@ -35,7 +32,7 @@ app = FastAPI(
 
 def auto_bootstrap_database():
     from app.database.connection import SessionLocal
-    from app.models.fake_student import FakeStudent
+    from app.models.student import Student
     from app.models.faculty import Faculty
     import csv
 
@@ -53,7 +50,7 @@ def auto_bootstrap_database():
             db.commit()
             print("🌱 Created initial admin account (admin / admin)")
 
-        if db.query(FakeStudent).count() == 0:
+        if db.query(Student).count() == 0:
             csv_path = Path(__file__).resolve().parent.parent / "data" / "students.csv"
             if csv_path.exists():
                 from app.services.student_matcher import standardize_name, reverse_name_initials
@@ -72,7 +69,7 @@ def auto_bootstrap_database():
                         std_name = standardize_name(raw_name)
                         rev_name = reverse_name_initials(raw_name)
 
-                        st = FakeStudent(
+                        st = Student(
                             roll_no=roll_no,
                             name=raw_name,
                             standardized_name=std_name,
@@ -87,7 +84,7 @@ def auto_bootstrap_database():
                         )
                         db.add(st)
                 db.commit()
-                print(f"🌱 Auto-seeded {db.query(FakeStudent).count()} students from students.csv")
+                print(f"🌱 Auto-seeded {db.query(Student).count()} students from students.csv")
 
         # 3. Bootstrap Tests from CSV if table is empty
         from app.models.test import Test

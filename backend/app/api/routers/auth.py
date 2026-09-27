@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.connection import get_db
 from app.models.faculty import Faculty
-from app.models.fake_student import FakeStudent
+from app.models.student import Student
 
 router = APIRouter(
     prefix="/auth",
@@ -56,8 +56,8 @@ def login(request: LoginRequest, db: Session = Depends(get_db)):
 
     # 2. Check Student by Roll No (case-insensitive)
     student = (
-        db.query(FakeStudent)
-        .filter(FakeStudent.roll_no.ilike(login_id))
+        db.query(Student)
+        .filter(Student.roll_no.ilike(login_id))
         .first()
     )
 

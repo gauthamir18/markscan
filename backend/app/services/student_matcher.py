@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 from sqlalchemy.orm import Session
 from rapidfuzz import fuzz, process
 
-from app.models.fake_student import FakeStudent
+from app.models.student import Student
 
 
 def clean_ocr_name(raw: str) -> str:
@@ -54,7 +54,7 @@ def find_best_student_match(
     cutoff: float = 40.0,
     selected_class: Optional[str] = None,
     selected_board: Optional[str] = None,
-) -> Tuple[Optional[FakeStudent], float, str, list]:
+) -> Tuple[Optional[Student], float, str, list]:
     """
     Finds the closest registered student from PostgreSQL (fake_students table).
     Includes hard initial checks, core-name validation, and cross-class fallback
@@ -70,7 +70,7 @@ def find_best_student_match(
     if not ocr_candidates:
         return None, 0.0, "", []
 
-    query = db.query(FakeStudent)
+    query = db.query(Student)
     all_students = query.all()
     if not all_students:
         return None, 0.0, ocr_candidates[0], []
@@ -100,7 +100,7 @@ def find_best_student_match(
             students = b_filtered
             class_filtered = True
 
-    def score_student(st: FakeStudent) -> float:
+    def score_student(st: Student) -> float:
         st_names = [st.name, st.standardized_name]
         if st.reversed_name:
             st_names.append(st.reversed_name)
@@ -177,7 +177,7 @@ def find_best_student_match(
         return max_st_score
 
     # 1. Match within filtered class roster
-    best_student: Optional[FakeStudent] = None
+    best_student: Optional[Student] = None
     best_score: float = -1.0
     for st in students:
         sc = score_student(st)
@@ -187,7 +187,7 @@ def find_best_student_match(
 
     # 2. Cross-class fallback: only if class-filtered match is weak (< 60), check all classes
     if class_filtered and (best_score < 60.0 or best_student is None):
-        global_best: Optional[FakeStudent] = None
+        global_best: Optional[Student] = None
         global_score: float = -1.0
         for st in all_students:
             sc = score_student(st)

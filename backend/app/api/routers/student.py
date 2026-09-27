@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database.connection import get_db
-from app.models.fake_student import FakeStudent
-from app.models.fake_mark import FakeMark
+from app.models.student import Student
+from app.models.mark import Mark
 from app.models.test import Test
 
 router = APIRouter(
@@ -21,7 +21,7 @@ def get_student_profile_and_marks(
     db: Session = Depends(get_db),
 ):
     clean_roll = roll_no.strip()
-    student = db.query(FakeStudent).filter(FakeStudent.roll_no.ilike(clean_roll)).first()
+    student = db.query(Student).filter(Student.roll_no.ilike(clean_roll)).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")
 
@@ -38,9 +38,9 @@ def get_student_profile_and_marks(
 
     # 2. Fetch all fake_marks recorded for this student
     marks_entries = (
-        db.query(FakeMark)
-        .filter(FakeMark.student_id == student.id)
-        .order_by(FakeMark.created_at.desc(), FakeMark.id.desc())
+        db.query(Mark)
+        .filter(Mark.student_id == student.id)
+        .order_by(Mark.created_at.desc(), Mark.id.desc())
         .all()
     )
 
