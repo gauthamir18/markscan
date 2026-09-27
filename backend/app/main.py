@@ -30,6 +30,22 @@ app = FastAPI(
     version="1.0.0"
 )
 
+def standardize_name(name: str) -> str:
+    if not name:
+        return ""
+    import re
+    return " ".join(re.sub(r"[^a-zA-Z\s]", " ", name).split()).strip().title()
+
+
+def reverse_name_initials(name: str) -> str:
+    if not name:
+        return ""
+    parts = name.strip().split()
+    if len(parts) > 1:
+        return f"{parts[-1]} {' '.join(parts[:-1])}"
+    return name
+
+
 def auto_bootstrap_database():
     from app.database.connection import SessionLocal
     from app.models.student import Student
@@ -74,7 +90,6 @@ def auto_bootstrap_database():
         if db.query(Student).count() == 0:
             csv_path = Path(__file__).resolve().parent.parent / "data" / "students.csv"
             if csv_path.exists():
-                from app.services.student_matcher import standardize_name, reverse_name_initials
                 with open(csv_path, mode="r", encoding="utf-8-sig") as f:
                     reader = csv.DictReader(f)
                     for row in reader:
