@@ -175,12 +175,22 @@ def upload_image(
     with open(file_path, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
+    # 0. Normalize phone camera EXIF orientation if present
+    try:
+        from PIL import Image, ImageOps
+        with Image.open(file_path) as p_img:
+            transposed = ImageOps.exif_transpose(p_img)
+            if transposed is not None:
+                transposed.save(file_path)
+    except Exception as e:
+        print(f"EXIF transpose warning: {e}")
+
     # Detect and crop seal
     seal_info = detect_seal(str(file_path))
 
     if not seal_info["detected"]:
         processed_path = process_image(str(file_path))
-        seal_info = detect_seal(processed_path)
+        seal_info = detect_seal(processed_path, crop_source_path=str(file_path))
 
     if not seal_info["detected"]:
         return {
@@ -189,15 +199,15 @@ def upload_image(
             "message": "No seal was detected in the uploaded image.",
         }
 
-    # 1. Auto-orient, tighten borders, and crop field images for UI previews
-    crop_paths = {}
-    try:
-        crop_paths = crop_fields(seal_info["crop_path"])
-    except Exception as e:
-        print(f"crop_fields warning: {e}")
-    name_crop = crop_paths.get("name")
-    marks_crop = crop_paths.get("marks")
-    qp_crop = crop_paths.get("qp_code")
+    seal_crop_path = seal_info["crop_path"]
+
+    # 1. Pre-orient seal to landscape if portrait
+    seal_mat = cv2.imread(seal_crop_path)
+    if seal_mat is not None:
+        sh, sw = seal_mat.shape[:2]
+        if sh > sw:
+            seal_mat = cv2.rotate(seal_mat, cv2.ROTATE_90_CLOCKWISE)
+            cv2.imwrite(seal_crop_path, seal_mat)
 
     # 2. Query candidate students from PostgreSQL for this section
     candidate_records = []
@@ -214,19 +224,37 @@ def upload_image(
         print(f"Candidate query error: {e}")
     candidates = [{"id": s.id, "name": s.name, "roll_no": s.roll_no} for s in candidate_records]
 
-    # 3. Vision AI First (Zero server RAM, 99% accuracy on handwriting)
+    # 3. Vision AI First: Extract details + detect orientation (zero server RAM)
     from app.services.gemini_reader import analyze_seal_vision, get_genai_client
     vision_res = None
     if get_genai_client() is not None:
         try:
             vision_res = analyze_seal_vision(
-                seal_image_path=seal_info.get("crop_path"),
+                seal_image_path=seal_crop_path,
                 candidate_students=candidates,
                 selected_class=selected_class,
                 default_test_code=test_code,
             )
         except Exception as e:
             print(f"Vision AI invocation failed: {e}")
+
+    # 4. If seal was detected upside down, rotate 180 degrees to upright
+    if vision_res and vision_res.get("is_upside_down"):
+        print("Upside-down seal detected. Rotating 180 degrees to upright...")
+        s_img = cv2.imread(seal_crop_path)
+        if s_img is not None:
+            s_img = cv2.rotate(s_img, cv2.ROTATE_180)
+            cv2.imwrite(seal_crop_path, s_img)
+
+    # 5. Crop field images and tighten borders on the upright seal for UI previews
+    crop_paths = {}
+    try:
+        crop_paths = crop_fields(seal_crop_path)
+    except Exception as e:
+        print(f"crop_fields warning: {e}")
+    name_crop = crop_paths.get("name")
+    marks_crop = crop_paths.get("marks")
+    qp_crop = crop_paths.get("qp_code")
 
     raw_ocr_name = ""
     marks_raw = ""

@@ -69,19 +69,23 @@ Registered student candidates from our database for this exam section:
 Selected Class Context: {selected_class or 'N/A'}
 Default Test Code Context: {default_test_code or 'N/A'}
 
-Analyze the visual handwriting and stamp text carefully:
-1. Student Name: Choose the best matching student from the candidate list if one matches the handwriting, OR transcribe the exact handwriting if not in the list. Note that cursive J or S can look similar; examine the stroke flow carefully.
-2. Marks: Read the handwritten mark obtained and total marks. Fractional marks like 33 1/2 or 33.5 or 19 1/2 must be parsed accurately as decimal (e.g. 33.5, 19.5). If 23/35 is written, obtained is 23.0 and total is 35.0.
-3. QP Code: Transcribe the QP Code accurately.
+Analyze the visual handwriting, stamp table headers, and layout carefully:
+1. Orientation Check: Check the orientation of the printed table headers ('Name', 'Date', 'Class / Board', 'Test Type', 'Subject', 'QP Code', 'Marks', 'Comments').
+   Determine whether the printed headers and table are upright (readable normally) or upside-down (180 degrees inverted).
+   Set `is_upside_down`: true if the table is upside down (inverted 180 degrees), false if it is already upright.
+2. Student Name: Choose the best matching student from the candidate list if one matches the handwriting, OR transcribe the exact handwriting if not in the list. Note that cursive J or S can look similar; examine the stroke flow carefully.
+3. Marks: Read the handwritten mark obtained and total marks. Fractional marks like 33 1/2 or 33.5 or 19 1/2 must be parsed accurately as decimal (e.g. 33.5, 19.5). If 23/35 is written, obtained is 23.0 and total is 35.0.
+4. QP Code: Transcribe the QP Code accurately.
 
 Return ONLY a valid JSON object with the following structure:
 {{
+  "is_upside_down": <true or false>,
   "student_name": "<best matching student name from candidate list or transcription>",
   "marks_obtained": <numeric float or null, e.g. 33.5>,
   "marks_total": <numeric float or null, e.g. 35.0>,
   "qp_code": "<detected QP Code string or empty>",
   "confidence": <float from 0.0 to 1.0>,
-  "reasoning": "<short 1-line reason explaining the reading>"
+  "reasoning": "<short 1-line reason explaining the reading and orientation>"
 }}
 Do NOT include markdown formatting outside the JSON object.
 """
@@ -109,6 +113,8 @@ Do NOT include markdown formatting outside the JSON object.
                 parsed = json.loads(clean_json_str)
 
                 # Validate types
+                is_upside_down = bool(parsed.get("is_upside_down", False))
+
                 obtained = parsed.get("marks_obtained")
                 if obtained is not None:
                     try:
@@ -130,6 +136,7 @@ Do NOT include markdown formatting outside the JSON object.
                     conf = 0.95
 
                 return {
+                    "is_upside_down": is_upside_down,
                     "student_name": parsed.get("student_name", "").strip(),
                     "marks_obtained": obtained,
                     "marks_total": total,
