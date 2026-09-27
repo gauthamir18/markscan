@@ -38,7 +38,7 @@ def auto_bootstrap_database():
 
     db = SessionLocal()
     try:
-        admin = db.query(Faculty).filter(Faculty.role == "admin").first()
+        admin = db.query(Faculty).filter((Faculty.role.ilike("admin")) | (Faculty.email == "admin@markscan.edu")).first()
         if not admin:
             new_admin = Faculty(
                 name="Admin",
