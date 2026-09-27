@@ -1,18 +1,29 @@
 import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
+import 'class_verified_summary_screen.dart';
 import 'confirmation_screen.dart';
 
 class ExtractionScreen extends StatefulWidget {
   final String imagePath;
   final String selectedClass;
-  final String testCode;
+  final String? testCode;
+  final String? subject;
+  final String? board;
+  final bool isClassMode;
+  final bool fromCamera;
+  final List<Map<String, dynamic>>? verifiedStudents;
 
   const ExtractionScreen({
     super.key,
     required this.imagePath,
     required this.selectedClass,
-    required this.testCode,
+    this.testCode,
+    this.subject,
+    this.board,
+    this.isClassMode = false,
+    this.fromCamera = false,
+    this.verifiedStudents,
   });
 
   @override
@@ -29,20 +40,22 @@ class _ExtractionScreenState extends State<ExtractionScreen> {
   double? confidence;
   String? sealImageUrl;
   String? errorMessage;
+  bool needsVerification = false;
+  List<Map<String, dynamic>> topCandidates = [];
+  String? totalMarks;
+  bool visionAiUsed = false;
+  int? markId;
 
   @override
   void initState() {
     super.initState();
 
-    // Mock extraction values for demonstration.
-    studentController =
-        TextEditingController(text: 'Gauthami R Nair');
+    studentController = TextEditingController();
 
     testController =
-        TextEditingController(text: widget.testCode);
+        TextEditingController(text: widget.testCode ?? '');
 
-    marksController =
-        TextEditingController(text: '18');
+    marksController = TextEditingController();
 
     uploadAndDetect();
   }
@@ -51,6 +64,10 @@ class _ExtractionScreenState extends State<ExtractionScreen> {
     try {
       final result = await ApiService.uploadImage(
         widget.imagePath,
+        selectedClass: widget.selectedClass,
+        testCode: widget.testCode,
+        subject: widget.subject,
+        board: widget.board,
       );
 
       if (!mounted) return;
@@ -60,6 +77,33 @@ class _ExtractionScreenState extends State<ExtractionScreen> {
       setState(() {
         isUploading = false;
         sealDetected = result['status'] == 'success';
+
+        final studentName = result['student_name'];
+        final marksVal = result['marks'];
+
+        if (studentName is String && studentName.trim().isNotEmpty) {
+          studentController.text = studentName.trim();
+        }
+        if (marksVal != null && marksVal.toString().trim().isNotEmpty) {
+          marksController.text = marksVal.toString().trim();
+        }
+
+        needsVerification = result['needs_verification'] == true;
+        visionAiUsed = result['vision_ai_used'] == true;
+        if (result['mark_id'] is int) {
+          markId = result['mark_id'];
+        }
+        if (result['top_candidates'] is List) {
+          topCandidates =
+              List<Map<String, dynamic>>.from(result['top_candidates']);
+        }
+        totalMarks = result['total']?.toString();
+
+        final extractedTest = result['test_code'];
+        // In class mode, do not scan or overwrite test code from seal - it is fixed for the whole class
+        if (!widget.isClassMode && extractedTest is String && extractedTest.isNotEmpty) {
+          testController.text = extractedTest;
+        }
 
         if (seal is Map<String, dynamic>) {
           confidence =
@@ -91,6 +135,70 @@ class _ExtractionScreenState extends State<ExtractionScreen> {
     super.dispose();
   }
 
+  void onVerifiedClass() {
+    final sName = studentController.text.trim();
+    if (sName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter or select a student name.')),
+      );
+      return;
+    }
+
+    final marksVal = marksController.text.trim();
+    final testCodeVal = testController.text.trim().isNotEmpty
+        ? testController.text.trim()
+        : (widget.testCode ?? '');
+
+    // Persist verified/updated data in backend
+    ApiService.confirmMark(
+      markId: markId,
+      studentName: sName,
+      marks: marksVal,
+      total: totalMarks,
+      testCode: testCodeVal,
+    );
+
+    // Update verifiedStudents list
+    final List<Map<String, dynamic>> studentList =
+        widget.verifiedStudents != null ? widget.verifiedStudents! : [];
+
+    final studentRecord = {
+      'mark_id': markId,
+      'student_name': sName,
+      'marks': marksVal,
+      'total': totalMarks,
+      'test_code': testCodeVal,
+      'subject': widget.subject,
+      'class': widget.selectedClass,
+      'board': widget.board,
+    };
+
+    final existingIndex = studentList.indexWhere((s) =>
+        (markId != null && s['mark_id'] == markId) ||
+        (s['student_name'] != null &&
+            s['student_name'].toString().toLowerCase() == sName.toLowerCase()));
+
+    if (existingIndex >= 0) {
+      studentList[existingIndex] = studentRecord;
+    } else {
+      studentList.add(studentRecord);
+    }
+
+    // Navigate to ClassVerifiedSummaryScreen (shows Name and Mark, with CONTINUE and SUBMIT buttons)
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ClassVerifiedSummaryScreen(
+          selectedClass: widget.selectedClass,
+          selectedBoard: widget.board ?? '',
+          selectedSubject: widget.subject ?? '',
+          selectedTest: widget.testCode ?? testCodeVal,
+          verifiedStudents: studentList,
+        ),
+      ),
+    );
+  }
+
   void confirmDetails() {
     Navigator.push(
       context,
@@ -100,6 +208,8 @@ class _ExtractionScreenState extends State<ExtractionScreen> {
           testCode: testController.text,
           marks: marksController.text,
           selectedClass: widget.selectedClass,
+          totalMarks: totalMarks,
+          markId: markId,
         ),
       ),
     );
@@ -232,14 +342,14 @@ class _ExtractionScreenState extends State<ExtractionScreen> {
                   Icon(
                     Icons.check_circle,
                     color: Colors.green.shade700,
-                    size: 22,
+                    size: 20,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     confidence == null
                         ? 'Seal detected'
                         : 'Seal detected • '
-                          '${(confidence! * 100).toStringAsFixed(1)}%',
+                          '${((confidence! > 1.0 ? confidence! : confidence! * 100).clamp(0.0, 100.0)).toStringAsFixed(1)}%',
                     style: TextStyle(
                       color: Colors.green.shade700,
                       fontWeight: FontWeight.w600,
@@ -290,11 +400,66 @@ class _ExtractionScreenState extends State<ExtractionScreen> {
 
             const SizedBox(height: 25),
 
+            if (needsVerification) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber.shade400, width: 1.2),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: Colors.amber.shade800, size: 22),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Please verify student name (low confidence match)',
+                        style: TextStyle(
+                          color: Colors.amber.shade900,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
+
             _field(
               label: 'Student Name',
               controller: studentController,
               icon: Icons.person_outline,
             ),
+
+            if (topCandidates.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: topCandidates.map((c) {
+                  final name = c['name']?.toString() ?? '';
+                  final score = c['score']?.toString() ?? '';
+                  return ActionChip(
+                    backgroundColor: Colors.white,
+                    side: BorderSide(color: Colors.grey.shade300),
+                    avatar: const Icon(Icons.person, size: 14, color: darkBlue),
+                    label: Text(
+                      score.isNotEmpty ? '$name ($score%)' : name,
+                      style: const TextStyle(fontSize: 12, color: darkBlue),
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        studentController.text = name;
+                        needsVerification = false;
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
 
             const SizedBox(height: 18),
 
@@ -302,6 +467,7 @@ class _ExtractionScreenState extends State<ExtractionScreen> {
               label: 'Test Code',
               controller: testController,
               icon: Icons.assignment_outlined,
+              enabled: !widget.isClassMode,
             ),
 
             const SizedBox(height: 18),
@@ -316,62 +482,28 @@ class _ExtractionScreenState extends State<ExtractionScreen> {
             const SizedBox(height: 30),
 
             // ---------------------------------------------
-            // CONFIRM BUTTON
+            // VERIFIED ACTION BUTTON
             // ---------------------------------------------
 
             SizedBox(
               width: double.infinity,
               height: 56,
               child: ElevatedButton.icon(
-                onPressed:
-                    isUploading ? null : confirmDetails,
-                icon: const Icon(
-                  Icons.check_circle_outline,
-                ),
+                onPressed: isUploading
+                    ? null
+                    : (widget.isClassMode ? onVerifiedClass : confirmDetails),
+                icon: const Icon(Icons.check_circle_rounded),
                 label: const Text(
-                  'IS THIS RIGHT?',
+                  'VERIFIED',
                   style: TextStyle(
-                    fontSize: 15,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: darkBlue,
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // ---------------------------------------------
-            // EDIT BUTTON
-            // ---------------------------------------------
-
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: OutlinedButton.icon(
-                onPressed: () {
-                  FocusScope.of(context).unfocus();
-                },
-                icon: const Icon(Icons.edit_outlined),
-                label: const Text(
-                  'EDIT IT',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: darkBlue,
-                  side: const BorderSide(
-                    color: darkBlue,
-                    width: 1.5,
-                  ),
-                  backgroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -389,6 +521,7 @@ class _ExtractionScreenState extends State<ExtractionScreen> {
     required TextEditingController controller,
     required IconData icon,
     TextInputType? keyboardType,
+    bool enabled = true,
   }) {
     const darkBlue = Color(0xFF0D2B45);
 
@@ -407,12 +540,10 @@ class _ExtractionScreenState extends State<ExtractionScreen> {
         TextField(
           controller: controller,
           keyboardType: keyboardType,
-          decoration: const InputDecoration(
-            prefixIcon: Icon(
-              Icons.person_outline,
-              color: darkBlue,
-            ),
-          ).copyWith(
+          enabled: enabled,
+          decoration: InputDecoration(
+            filled: !enabled,
+            fillColor: !enabled ? const Color(0xFFECEFF1) : Colors.white,
             prefixIcon: Icon(
               icon,
               color: darkBlue,

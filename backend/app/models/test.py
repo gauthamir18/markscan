@@ -11,3 +11,7 @@ class Test(Base):
     test_name = Column(String, nullable=False)
     class_name = Column(String, nullable=False)
     max_marks = Column(Integer, nullable=False, default=20)
+    board = Column(String, nullable=True)
+    subject_id = Column(Integer, nullable=True)
+    subject_name = Column(String, nullable=True)
+    portion = Column(String, nullable=True)

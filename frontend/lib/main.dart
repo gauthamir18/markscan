@@ -14,7 +14,7 @@ class MarkScanApp extends StatelessWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'MarkScan AI',
+      title: 'MarkScan ai',
 
       theme: ThemeData(
         useMaterial3: true,

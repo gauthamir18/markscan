@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import '../services/api_service.dart';
 
 class ConfirmationScreen extends StatelessWidget {
   final String studentName;
   final String testCode;
   final String marks;
   final String selectedClass;
+  final String? totalMarks;
+  final int? markId;
 
   const ConfirmationScreen({
     super.key,
@@ -12,6 +15,8 @@ class ConfirmationScreen extends StatelessWidget {
     required this.testCode,
     required this.marks,
     required this.selectedClass,
+    this.totalMarks,
+    this.markId,
   });
 
   @override
@@ -78,22 +83,6 @@ class ConfirmationScreen extends StatelessWidget {
                     studentName,
                     marks,
                   ),
-
-                  // Sample entries for review demonstration.
-                  _studentTile(
-                    'Arun Kumar',
-                    '16',
-                  ),
-
-                  _studentTile(
-                    'Priya S',
-                    '19',
-                  ),
-
-                  _studentTile(
-                    'Rahul M',
-                    '17',
-                  ),
                 ],
               ),
             ),
@@ -129,13 +118,32 @@ class ConfirmationScreen extends StatelessWidget {
                           ),
                         ),
                         ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-
-                            Navigator.popUntil(
-                              context,
-                              (route) => route.isFirst,
+                          onPressed: () async {
+                            await ApiService.confirmMark(
+                              markId: markId,
+                              studentName: studentName,
+                              marks: marks,
+                              total: totalMarks,
+                              testCode: testCode,
                             );
+
+                            await ApiService.submitBatch([
+                              {
+                                'mark_id': markId,
+                                'student_name': studentName,
+                                'marks': marks,
+                                'total': totalMarks,
+                                'test_code': testCode,
+                              }
+                            ]);
+
+                            if (context.mounted) {
+                              Navigator.pop(context);
+                              Navigator.popUntil(
+                                context,
+                                (route) => route.isFirst,
+                              );
+                            }
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: darkBlue,
@@ -219,7 +227,11 @@ class ConfirmationScreen extends StatelessWidget {
           ),
 
           Text(
-            '$marks / 20',
+            marks.contains('/')
+                ? marks
+                : (totalMarks != null && totalMarks!.isNotEmpty
+                    ? '$marks / $totalMarks'
+                    : marks),
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,

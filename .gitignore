@@ -4,24 +4,24 @@ __pycache__/
 *.pyo
 
 # Virtual Environment
-backend/venv/
-
-# Environment Variables
-backend/.env
-
-# Temporary Images
-backend/uploads/
-backend/processed/
-backend/fields/
-
-# macOS
-.DS_Store
-# Python virtual environments
+backend/venv
 backend/venv/
 backend/venv_old/
 backend/venv_broken/
 yolo-env/
 labelstudio-env/
+
+# IDE
+.vscode/
+backend/.vscode/
+
+# Dataset zips & large files
+dataset/images.zip
+dataset_ocr/
+uploads/
+backend/uploads/
+backend/processed/
+backend/fields/
 
 # Python cache
 __pycache__/

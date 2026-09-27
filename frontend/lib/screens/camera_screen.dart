@@ -4,12 +4,20 @@ import 'extraction_screen.dart';
 
 class CameraScreen extends StatefulWidget {
   final String selectedClass;
-  final String testCode;
+  final String? testCode;
+  final String? subject;
+  final String? board;
+  final bool isClassMode;
+  final List<Map<String, dynamic>>? verifiedStudents;
 
   const CameraScreen({
     super.key,
     required this.selectedClass,
-    required this.testCode,
+    this.testCode,
+    this.subject,
+    this.board,
+    this.isClassMode = false,
+    this.verifiedStudents,
   });
 
   @override
@@ -72,16 +80,38 @@ class _CameraScreenState extends State<CameraScreen> {
 
       if (!mounted) return;
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ExtractionScreen(
-            imagePath: image.path,
-            selectedClass: widget.selectedClass,
-            testCode: widget.testCode,
+      if (widget.isClassMode) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ExtractionScreen(
+              imagePath: image.path,
+              selectedClass: widget.selectedClass,
+              testCode: widget.testCode,
+              subject: widget.subject,
+              board: widget.board,
+              isClassMode: true,
+              fromCamera: true,
+              verifiedStudents: widget.verifiedStudents,
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ExtractionScreen(
+              imagePath: image.path,
+              selectedClass: widget.selectedClass,
+              testCode: widget.testCode,
+              subject: widget.subject,
+              board: widget.board,
+              isClassMode: false,
+              fromCamera: true,
+            ),
+          ),
+        );
+      }
     } catch (e) {
       debugPrint('Capture error: $e');
 

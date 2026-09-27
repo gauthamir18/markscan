@@ -1,8 +1,6 @@
 from pathlib import Path
 
 import cv2
-from ultralytics import YOLO
-
 
 MODEL_PATH = (
     Path(__file__).resolve().parents[3]
@@ -21,14 +19,19 @@ def get_model():
 
     if model is None:
         print("Loading YOLO seal detector...")
+        from ultralytics import YOLO
         model = YOLO(str(MODEL_PATH))
         print("YOLO seal detector loaded.")
 
     return model
 
 
-def detect_seal(image_path: str, confidence: float = 0.5):
+def detect_seal(image_path: str, confidence: float = 0.5, crop_source_path: str | None = None):
     image = cv2.imread(image_path)
+
+    crop_source = cv2.imread(crop_source_path) if crop_source_path else image
+    if crop_source is None:
+        raise ValueError(f"Could not read crop source: {crop_source_path}")
 
     if image is None:
         raise ValueError(f"Could not read image: {image_path}")
@@ -58,14 +61,14 @@ def detect_seal(image_path: str, confidence: float = 0.5):
 
     x1, y1, x2, y2 = map(int, box)
 
-    height, width = image.shape[:2]
+    height, width = crop_source.shape[:2]
 
     x1 = max(0, min(x1, width - 1))
     y1 = max(0, min(y1, height - 1))
     x2 = max(x1 + 1, min(x2, width))
     y2 = max(y1 + 1, min(y2, height))
 
-    crop = image[y1:y2, x1:x2]
+    crop = crop_source[y1:y2, x1:x2]
 
     crop_dir = Path("uploads") / "seals"
     crop_dir.mkdir(parents=True, exist_ok=True)

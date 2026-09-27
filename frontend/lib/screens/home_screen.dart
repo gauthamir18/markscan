@@ -1,9 +1,39 @@
 import 'package:flutter/material.dart';
 import 'select_test_screen.dart';
+import 'manage_marks_screen.dart';
+import 'login_screen.dart';
 import '../widgets/app_drawer.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Faculty Logout'),
+        content: const Text('Are you sure you want to log out of the faculty dashboard?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700),
+            onPressed: () {
+              Navigator.pop(ctx);
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const LoginScreen()),
+                (route) => false,
+              );
+            },
+            child: const Text('Logout', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,11 +50,18 @@ class HomeScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
         title: const Text(
-          'MarkScan AI',
+          'MarkScan ai',
           style: TextStyle(
             fontWeight: FontWeight.bold,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout_rounded, color: Colors.white),
+            tooltip: 'Logout',
+            onPressed: () => _showLogoutDialog(context),
+          ),
+        ],
       ),
 
       body: SingleChildScrollView(
@@ -138,7 +175,14 @@ class HomeScreen extends StatelessWidget {
                     title: 'Manage Marks',
                     subtitle: 'View entered marks',
                     iconColor: darkBlue,
-                    onTap: () {},
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const ManageMarksScreen(),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],

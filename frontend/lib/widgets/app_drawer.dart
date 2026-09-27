@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../screens/select_test_screen.dart';
+import '../screens/manage_marks_screen.dart';
+import '../screens/login_screen.dart';
 
 class AppDrawer extends StatelessWidget {
   const AppDrawer({super.key});
@@ -78,6 +81,12 @@ class AppDrawer extends StatelessWidget {
               iconColor: darkBlue,
               onTap: () {
                 Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SelectTestScreen(),
+                  ),
+                );
               },
             ),
 
@@ -88,6 +97,12 @@ class AppDrawer extends StatelessWidget {
               iconColor: darkBlue,
               onTap: () {
                 Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ManageMarksScreen(),
+                  ),
+                );
               },
             ),
 
@@ -109,9 +124,34 @@ class AppDrawer extends StatelessWidget {
               context,
               icon: Icons.logout_outlined,
               title: 'Logout',
-              iconColor: darkBlue,
+              iconColor: Colors.red.shade700,
               onTap: () {
-                Navigator.pop(context);
+                Navigator.pop(context); // Close drawer
+                showDialog(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('Faculty Logout'),
+                    content: const Text('Are you sure you want to log out of the faculty dashboard?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Cancel'),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(builder: (_) => const LoginScreen()),
+                            (route) => false,
+                          );
+                        },
+                        child: const Text('Logout', style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                );
               },
             ),
 
