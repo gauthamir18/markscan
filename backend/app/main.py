@@ -34,7 +34,28 @@ def auto_bootstrap_database():
     from app.database.connection import SessionLocal
     from app.models.student import Student
     from app.models.faculty import Faculty
+    from app.models.test import Test
+    from sqlalchemy import inspect, text
     import csv
+
+    # 1. Check if PostgreSQL has legacy schema
+    try:
+        inspector = inspect(engine)
+        if "students" in inspector.get_table_names():
+            cols = [c["name"] for c in inspector.get_columns("students")]
+            if "roll_no" not in cols:
+                print("🔄 Migrating legacy schema: dropping obsolete tables...")
+                with engine.connect() as conn:
+                    conn.execute(text("DROP TABLE IF EXISTS marks CASCADE;"))
+                    conn.execute(text("DROP TABLE IF EXISTS scan_sessions CASCADE;"))
+                    conn.execute(text("DROP TABLE IF EXISTS students CASCADE;"))
+                    conn.execute(text("DROP TABLE IF EXISTS fake_students CASCADE;"))
+                    conn.execute(text("DROP TABLE IF EXISTS fake_marks CASCADE;"))
+                    conn.commit()
+                Base.metadata.create_all(bind=engine)
+                print("✅ Re-created tables with latest schema.")
+    except Exception as e:
+        print(f"Schema check error: {e}")
 
     db = SessionLocal()
     try:
@@ -87,7 +108,6 @@ def auto_bootstrap_database():
                 print(f"🌱 Auto-seeded {db.query(Student).count()} students from students.csv")
 
         # 3. Bootstrap Tests from CSV if table is empty
-        from app.models.test import Test
         if db.query(Test).count() == 0:
             tests_csv_path = Path(__file__).resolve().parent.parent / "data" / "tests.csv"
             if tests_csv_path.exists():
@@ -114,25 +134,6 @@ def auto_bootstrap_database():
 @app.on_event("startup")
 def startup_event():
     auto_bootstrap_database()
-
-    def _warmup():
-        try:
-            from app.services.seal_detector import get_model
-            print("⏳ Pre-warming YOLO seal detector...")
-            get_model()
-        except Exception as e:
-            print(f"⚠️ Pre-warm seal detector skipped: {e}")
-
-        try:
-            from app.services.ocr import get_easyocr_reader
-            print("⏳ Pre-warming EasyOCR reader in background...")
-            get_easyocr_reader()
-            print("🌟 EasyOCR pre-warming complete!")
-        except Exception as e:
-            print(f"⚠️ Pre-warm EasyOCR skipped: {e}")
-
-    import threading
-    threading.Thread(target=_warmup, daemon=True).start()
     print("🌟 MarkScan AI server ready and accepting traffic!")
 
 
