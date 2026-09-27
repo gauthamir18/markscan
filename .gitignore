@@ -39,8 +39,9 @@ frontend/.metadata
 
 # Runtime/generated files
 backend/uploads/
-backend/processed/
 runs/
+backend/runs/
+!backend/runs/detect/markscan_seal_v2/weights/best.pt
 
 # Local secrets
 .env

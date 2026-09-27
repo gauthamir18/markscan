@@ -114,13 +114,21 @@ def auto_bootstrap_database():
 @app.on_event("startup")
 def startup_event():
     auto_bootstrap_database()
-    from app.services.seal_detector import get_model
-    from app.services.ocr import get_easyocr_reader
-    print("⏳ Pre-warming YOLO seal detector...")
-    get_model()
-    print("⏳ Pre-warming EasyOCR reader...")
-    get_easyocr_reader()
-    print("🌟 All AI models pre-warmed and ready to serve!")
+    try:
+        from app.services.seal_detector import get_model
+        print("⏳ Pre-warming YOLO seal detector...")
+        get_model()
+    except Exception as e:
+        print(f"⚠️ Pre-warm seal detector skipped: {e}")
+
+    try:
+        from app.services.ocr import get_easyocr_reader
+        print("⏳ Pre-warming EasyOCR reader...")
+        get_easyocr_reader()
+    except Exception as e:
+        print(f"⚠️ Pre-warm EasyOCR skipped: {e}")
+
+    print("🌟 MarkScan AI initialization complete!")
 
 
 # Serve uploaded images/cropped seals to the Flutter app

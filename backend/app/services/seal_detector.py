@@ -2,14 +2,19 @@ from pathlib import Path
 
 import cv2
 
-MODEL_PATH = (
-    Path(__file__).resolve().parents[3]
-    / "runs"
-    / "detect"
-    / "markscan_seal_v2"
-    / "weights"
-    / "best.pt"
-)
+def find_model_path():
+    candidates = [
+        Path(__file__).resolve().parents[2] / "runs" / "detect" / "markscan_seal_v2" / "weights" / "best.pt",
+        Path(__file__).resolve().parents[3] / "runs" / "detect" / "markscan_seal_v2" / "weights" / "best.pt",
+        Path("runs/detect/markscan_seal_v2/weights/best.pt").resolve(),
+        Path("/app/runs/detect/markscan_seal_v2/weights/best.pt"),
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return candidates[0]
+
+MODEL_PATH = find_model_path()
 
 model = None
 
@@ -18,10 +23,18 @@ def get_model():
     global model
 
     if model is None:
-        print("Loading YOLO seal detector...")
-        from ultralytics import YOLO
-        model = YOLO(str(MODEL_PATH))
-        print("YOLO seal detector loaded.")
+        path = find_model_path()
+        if not path.exists():
+            print(f"⚠️ YOLO seal detector weights not found at {path}. OCR will proceed without YOLO seal detection.")
+            return None
+        print(f"Loading YOLO seal detector from {path}...")
+        try:
+            from ultralytics import YOLO
+            model = YOLO(str(path))
+            print("YOLO seal detector loaded.")
+        except Exception as e:
+            print(f"⚠️ Failed to load YOLO seal detector: {e}")
+            return None
 
     return model
 
@@ -37,6 +50,13 @@ def detect_seal(image_path: str, confidence: float = 0.5, crop_source_path: str 
         raise ValueError(f"Could not read image: {image_path}")
 
     detector = get_model()
+    if detector is None:
+        return {
+            "detected": False,
+            "confidence": None,
+            "box": None,
+            "crop_path": None,
+        }
 
     results = detector(
         image,
