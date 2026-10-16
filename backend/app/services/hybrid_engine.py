@@ -2,7 +2,7 @@ import os
 from typing import Optional, Dict, Any, List
 from sqlalchemy.orm import Session
 from app.models.student import Student
-from app.services.gemini_reader import analyze_seal_vision
+from app.services.vision_service import analyze_seal_vision
 from app.services.student_matcher import clean_ocr_name
 
 def decide_hybrid(

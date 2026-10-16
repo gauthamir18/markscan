@@ -46,6 +46,9 @@ backend/runs/
 # Local secrets
 .env
 backend/.env
+backend/credentials.json
+backend/service_account.json
+backend/token.json
 
 # Large/local backups and generated ML files
 frontend/android_backup/

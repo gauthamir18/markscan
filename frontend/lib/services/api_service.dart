@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static const String baseUrl =
-      'https://web-production-9cc35.up.railway.app';
+  static String baseUrl =
+      'http://192.168.29.246:8000';
 
   static Future<Map<String, dynamic>> uploadImage(
     String imagePath, {
