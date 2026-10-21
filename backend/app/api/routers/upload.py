@@ -304,10 +304,18 @@ def upload_image(
         except Exception:
             pass
 
+
     # If obtained marks still not parsed, run parse_marks
+    marks_parsed = {}
+
     if final_obtained is None and marks_raw:
-        marks_parsed = parse_marks(marks_raw, test_code=effective_test_code, default_max=final_total)
+        marks_parsed = parse_marks(
+            marks_raw,
+            test_code=effective_test_code,
+            default_max=final_total,
+        )
         final_obtained = marks_parsed.get("obtained")
+
         if final_total is None:
             final_total = marks_parsed.get("total")
 
