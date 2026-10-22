@@ -2,8 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  static String baseUrl =
-      'http://192.168.29.246:8000';
+  static String baseUrl = 'https://markscan-b4f9.onrender.com';
 
   static Future<Map<String, dynamic>> uploadImage(
     String imagePath, {

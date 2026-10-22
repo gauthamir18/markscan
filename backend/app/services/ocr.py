@@ -46,7 +46,7 @@ def get_easyocr_reader():
             _easyocr_reader = easyocr.Reader(['en'], gpu=False)
         except Exception as e:
             print(f"Failed to initialize EasyOCR: {e}")
-    return _easyocr_reader
+    return _easyocr_reader#
 
 
 def get_ocr_model():
