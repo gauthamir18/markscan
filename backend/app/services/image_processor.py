@@ -1,7 +1,8 @@
 import cv2
 from pathlib import Path
 
-PROCESSED_DIR = Path("processed")
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+PROCESSED_DIR = BASE_DIR / "processed"
 PROCESSED_DIR.mkdir(exist_ok=True)
 
 

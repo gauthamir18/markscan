@@ -226,9 +226,9 @@ def upload_image(
     candidates = [{"id": s.id, "name": s.name, "roll_no": s.roll_no} for s in candidate_records]
 
     # 3. Vision AI First: Extract details + detect orientation (zero server RAM)
-    from app.services.gemini_reader import analyze_seal_vision, get_genai_client
+    from app.services.vision_service import analyze_seal_vision, is_vision_available
     vision_res = None
-    if get_genai_client() is not None:
+    if is_vision_available():
         try:
             vision_res = analyze_seal_vision(
                 seal_image_path=seal_crop_path,
@@ -269,7 +269,7 @@ def upload_image(
 
     if vision_res is not None:
         vision_ai_used = True
-        vision_model = vision_res.get("model_used", "gemini-3.1-flash-lite")
+        vision_model = vision_res.get("model_used", "gemini")
         vision_reasoning = vision_res.get("reasoning", "")
         raw_ocr_name = vision_res.get("student_name", "").strip()
         final_obtained = vision_res.get("marks_obtained")

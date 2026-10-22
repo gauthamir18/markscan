@@ -139,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
               spacing: 8,
               children: [
                 ActionChip(
-                  label: const Text('Local (Qwen AI)'),
+                  label: const Text('Local Server'),
                   onPressed: () => serverController.text = 'http://192.168.29.246:8000',
                 ),
                 ActionChip(

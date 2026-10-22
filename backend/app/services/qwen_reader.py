@@ -6,9 +6,11 @@ from pathlib import Path
 from typing import Optional, List, Dict, Any
 import cv2
 import requests
-from dotenv import load_dotenv
-
-load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).resolve().parent.parent.parent / ".env")
+except ImportError:
+    pass
 
 DEFAULT_QWEN_MODELS = [
     "qwen2.5vl:3b",
@@ -27,7 +29,7 @@ def get_qwen_config() -> Dict[str, Any]:
     base_url = os.getenv("QWEN_BASE_URL", "http://localhost:11434").rstrip("/")
     model = os.getenv("QWEN_MODEL", "").strip()
     api_key = os.getenv("QWEN_API_KEY", "").strip()
-    timeout = int(os.getenv("QWEN_TIMEOUT", "90"))
+    timeout = int(os.getenv("QWEN_TIMEOUT", "60"))
     return {
         "base_url": base_url,
         "model": model,
@@ -41,8 +43,8 @@ def is_qwen_available() -> bool:
     cfg = get_qwen_config()
     headers = {"Authorization": f"Bearer {cfg['api_key']}"} if cfg["api_key"] else {}
     try:
-        # Check Ollama tags first
-        resp = requests.get(f"{cfg['base_url']}/api/tags", headers=headers, timeout=3)
+        # Check Ollama tags first with quick 2s timeout
+        resp = requests.get(f"{cfg['base_url']}/api/tags", headers=headers, timeout=2)
         if resp.status_code == 200:
             return True
     except Exception:
@@ -50,7 +52,7 @@ def is_qwen_available() -> bool:
 
     try:
         # Check OpenAI-compatible /v1/models (vLLM / LM Studio / LocalAI)
-        resp = requests.get(f"{cfg['base_url']}/v1/models", headers=headers, timeout=3)
+        resp = requests.get(f"{cfg['base_url']}/v1/models", headers=headers, timeout=2)
         if resp.status_code == 200:
             return True
     except Exception:
@@ -62,7 +64,7 @@ def is_qwen_available() -> bool:
 def get_installed_ollama_models(base_url: str) -> List[str]:
     """Queries Ollama for list of installed model names."""
     try:
-        resp = requests.get(f"{base_url}/api/tags", timeout=3)
+        resp = requests.get(f"{base_url}/api/tags", timeout=2)
         if resp.status_code == 200:
             data = resp.json()
             return [m.get("name", "") for m in data.get("models", [])]
@@ -182,7 +184,7 @@ def call_ollama_api(
     model_name: str,
     prompt: str,
     base64_img: str,
-    timeout: int = 90
+    timeout: int = 60
 ) -> Optional[str]:
     """Calls Ollama's native multimodal chat API (/api/chat)."""
     payload = {
@@ -220,7 +222,7 @@ def call_openai_compatible_api(
     base64_img: str,
     mime_type: str = "image/jpeg",
     api_key: str = "",
-    timeout: int = 90,
+    timeout: int = 60,
 ) -> Optional[str]:
     """Calls standard OpenAI-compatible /v1/chat/completions (vLLM, LM Studio, etc.)."""
     headers = {"Content-Type": "application/json"}
@@ -306,7 +308,6 @@ def analyze_seal_qwen(
         default_test_code=default_test_code,
     )
 
-    # Determine model to use
     models_to_try = []
     if cfg["model"]:
         models_to_try.append(cfg["model"])
@@ -321,7 +322,6 @@ def analyze_seal_qwen(
 
     # Execute inference
     for model_name in models_to_try:
-        # Try native Ollama chat API
         raw_output = call_ollama_api(
             base_url=base_url,
             model_name=model_name,
@@ -330,7 +330,6 @@ def analyze_seal_qwen(
             timeout=cfg["timeout"],
         )
 
-        # Fallback to OpenAI-compatible API
         if not raw_output:
             raw_output = call_openai_compatible_api(
                 base_url=base_url,

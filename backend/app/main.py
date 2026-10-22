@@ -1,3 +1,7 @@
+import warnings
+warnings.filterwarnings("ignore", message=".*automatic function calling.*")
+warnings.filterwarnings("ignore", message=".*Direct use of automatic function calling.*")
+
 from pathlib import Path
 
 from fastapi import FastAPI
