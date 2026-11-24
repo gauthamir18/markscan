@@ -120,6 +120,16 @@ GOOGLE_DRIVE_SERVICE_ACCOUNT_FILE=service_account.json
 
 Never commit .env, service-account JSON, OAuth tokens, database URLs with passwords, or real student datasets. The committed .env.example is a template only; replace all sample values.
 
+### 2. Provision the first administrator
+
+The application no longer creates a predictable default admin account or imports student credentials from a CSV at startup. After setting DATABASE_URL and JWT_SECRET_KEY, run this from the backend/ directory:
+
+```bash
+python scripts/create_admin.py
+```
+
+Choose a unique password of at least 12 characters. Existing legacy accounts are upgraded to Argon2id hashes after a successful login; because earlier credentials were exposed in the repository, arrange a password reset for every existing student and faculty account.
+
 Start the API from the backend directory:
 
 ~~~bash
@@ -158,6 +168,9 @@ The API is implemented in backend/app/main.py and the router modules under backe
 For POST /upload/, send a multipart form with the image field file. Optional context fields include selected_class, test_code, subject and board.
 
 ## Security and data handling
+
+The current security-hardening branch adds Argon2id password hashing, short-lived signed bearer tokens, role checks on protected API routes, and secure token storage in the Flutter app. Configure a unique JWT_SECRET_KEY in the backend deployment environment before starting the API. The key must be at least 32 characters; generate one with: python -c "import secrets; print(secrets.token_urlsafe(48))".
+
 
 The current public source snapshot contains sensitive student information and authentication weaknesses. Treat this as a development project until the following are fixed:
 
