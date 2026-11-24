@@ -1,11 +1,18 @@
 from getpass import getpass
 
 from app.core.security import hash_password
-from app.database.connection import SessionLocal
+from app.database.base import Base
+from app.database.connection import SessionLocal, engine
 from app.models.faculty import Faculty
+from app.models.mark import Mark
+from app.models.student import Student
+from app.models.test import Test
 
 
 def main() -> None:
+    # Ensure all application tables exist before inserting the first administrator.
+    Base.metadata.create_all(bind=engine)
+
     name = input("Admin display name: ").strip()
     email = input("Admin email: ").strip().lower()
     password = getpass("New admin password (minimum 12 characters): ")
