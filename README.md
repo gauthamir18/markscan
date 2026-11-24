@@ -128,7 +128,7 @@ The application no longer creates a predictable default admin account or imports
 python scripts/create_admin.py
 ```
 
-Choose a unique password of at least 12 characters. Existing legacy accounts are upgraded to Argon2id hashes after a successful login; because earlier credentials were exposed in the repository, arrange a password reset for every existing student and faculty account.
+Choose a unique password of at least 12 characters. Existing legacy accounts are upgraded to Argon2id hashes after a successful login; because earlier credentials were exposed in the repository, arrange a password reset for every existing student and faculty account. Reset an account from the backend directory with `python scripts/reset_account_password.py`; enter the faculty email or student roll number when prompted. Repeat for each account and distribute new credentials privately.
 
 Start the API from the backend directory:
 
@@ -172,7 +172,7 @@ For POST /upload/, send a multipart form with the image field file. Optional con
 The current security-hardening branch adds Argon2id password hashing, short-lived signed bearer tokens, role checks on protected API routes, and secure token storage in the Flutter app. Configure a unique JWT_SECRET_KEY in the backend deployment environment before starting the API. The key must be at least 32 characters; generate one with: python -c "import secrets; print(secrets.token_urlsafe(48))".
 
 
-The current public source snapshot contains sensitive student information and authentication weaknesses. Treat this as a development project until the following are fixed:
+The student credential CSV has been removed from the current branch snapshot, and the main and security-hardening branch histories have been reset. The v0.1.0 tag still points to the earlier history and must be deleted before historical exposure can be considered cleared. GitHub may retain unreachable objects or cached views for a period; contact GitHub Support if the old commit remains accessible. Treat all previously exposed passwords as compromised and reset them.
 
 - Remove real student data and passwords from tracked files and Git history; rotate/reset exposed credentials.
 - Hash passwords with a modern password-hashing algorithm such as Argon2id or bcrypt; never compare or store plaintext passwords.
