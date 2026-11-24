@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 
 from app.database.connection import get_db
+from app.api.dependencies import require_staff
 from app.models.student import Student
 from app.models.mark import Mark
 from app.models.test import Test
@@ -29,6 +30,7 @@ def get_class_marks(
     board: str = Query(..., description="Board e.g. State Board, CBSE, ISC, ICSE"),
     test_code: str = Query(..., description="Test Code e.g. S12P35C1"),
     db: Session = Depends(get_db),
+    current_user: dict = Depends(require_staff),
 ):
     cls_clean = class_name.strip()
     board_clean = board.strip()
@@ -135,6 +137,7 @@ def get_class_marks(
 def update_mark(
     req: MarkUpdateRequest,
     db: Session = Depends(get_db),
+    current_user: dict = Depends(require_staff),
 ):
     student = db.query(Student).filter(Student.id == req.student_id).first()
     if not student:
