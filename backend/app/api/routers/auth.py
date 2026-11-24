@@ -6,11 +6,9 @@ from sqlalchemy.orm import Session
 from app.database.connection import get_db
 from app.models.faculty import Faculty
 from app.models.student import Student
+from app.core.security import create_access_token, verify_password_and_upgrade
 
-router = APIRouter(
-    prefix="/auth",
-    tags=["Authentication"]
-)
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 class LoginRequest(BaseModel):
@@ -19,93 +17,72 @@ class LoginRequest(BaseModel):
     password: str
 
 
+def _success_response(user_id: int, role: str, user_data: dict) -> dict:
+    return {
+        "status": "success",
+        "role": role,
+        "access_token": create_access_token(user_id, role),
+        "token_type": "bearer",
+        **user_data,
+    }
+
+
 @router.post("/login")
 def login(request: LoginRequest, db: Session = Depends(get_db)):
     login_id = (request.identifier or request.email or "").strip()
-    pwd = request.password.strip()
+    password = request.password
 
-    if not login_id:
-        raise HTTPException(status_code=400, detail="Roll No, Username, or Email is required")
+    if not login_id or not password:
+        raise HTTPException(status_code=400, detail="Username, email or roll number and password are required.")
 
-    # 1. Check Admin / Faculty
-    if login_id.lower() == "admin" or "@" in login_id:
-        faculty = (
-            db.query(Faculty)
-            .filter(
-                (Faculty.email.ilike(login_id)) | 
-                (Faculty.role.ilike("admin") if login_id.lower() == "admin" else False)
-            )
-            .first()
-        )
-        if faculty:
-            # Check password
-            if faculty.password == pwd or (login_id.lower() == "admin" and pwd in ["admin", "admin123"]):
-                return {
-                    "status": "success",
-                    "role": "admin",
-                    "user": {
-                        "id": faculty.id,
-                        "name": faculty.name,
-                        "email": faculty.email,
-                        "role": faculty.role,
-                        "phone": faculty.phone,
-                    }
-                }
-            else:
-                raise HTTPException(status_code=401, detail="Invalid admin password")
+    # Admin may sign in using the legacy username alias or the account email.
+    if login_id.lower() == "admin":
+        faculty = db.query(Faculty).filter(Faculty.role.ilike("admin")).first()
+    else:
+        faculty = db.query(Faculty).filter(Faculty.email.ilike(login_id)).first()
 
-    # 2. Check Student by Roll No (case-insensitive)
-    student = (
-        db.query(Student)
-        .filter(Student.roll_no.ilike(login_id))
-        .first()
-    )
-
-    if student:
-        # User requirement: "let logon be their roll no and password be same"
-        # Support password == roll_no (case-insensitive) OR student's saved password in DB
-        if (
-            pwd.lower() == student.roll_no.lower() or 
-            (student.password and pwd.lower() == student.password.lower()) or
-            (student.password and pwd == student.password)
-        ):
-            return {
-                "status": "success",
-                "role": "student",
-                "student": {
-                    "id": student.id,
-                    "roll_no": student.roll_no,
-                    "name": student.name,
-                    "class_name": student.class_name,
-                    "board": student.board,
-                    "school_name": student.school_name,
-                    "phone": student.phone,
-                    "email": student.email,
-                    "mode_of_education": student.mode_of_education or "Offline",
-                }
-            }
-        else:
-            raise HTTPException(
-                status_code=401, 
-                detail="Incorrect password. For students, default password is your Roll No (e.g. IA040)."
-            )
-
-    # 3. Fallback: check faculty table directly if email/user was entered
-    faculty = db.query(Faculty).filter(Faculty.email.ilike(login_id)).first()
-    if faculty and faculty.password == pwd:
-        return {
-            "status": "success",
-            "role": "faculty",
-            "user": {
+    if faculty is not None:
+        valid, replacement = verify_password_and_upgrade(password, faculty.password)
+        if not valid:
+            raise HTTPException(status_code=401, detail="Invalid username or password.")
+        if replacement:
+            faculty.password = replacement
+            db.commit()
+        role = str(faculty.role).lower()
+        return _success_response(
+            faculty.id,
+            role,
+            {"user": {
                 "id": faculty.id,
                 "name": faculty.name,
                 "email": faculty.email,
                 "role": faculty.role,
                 "phone": faculty.phone,
-            }
-        }
+            }},
+        )
 
-    raise HTTPException(
-        status_code=401,
-        detail="Account not found. Please enter a valid Roll Number or Admin username."
-    )
+    student = db.query(Student).filter(Student.roll_no.ilike(login_id)).first()
+    if student is not None:
+        valid, replacement = verify_password_and_upgrade(password, student.password or "")
+        if not valid:
+            raise HTTPException(status_code=401, detail="Invalid username or password.")
+        if replacement:
+            student.password = replacement
+            db.commit()
+        return _success_response(
+            student.id,
+            "student",
+            {"student": {
+                "id": student.id,
+                "roll_no": student.roll_no,
+                "name": student.name,
+                "class_name": student.class_name,
+                "board": student.board,
+                "school_name": student.school_name,
+                "phone": student.phone,
+                "email": student.email,
+                "mode_of_education": student.mode_of_education or "Offline",
+            }},
+        )
+
+    raise HTTPException(status_code=401, detail="Invalid username or password.")

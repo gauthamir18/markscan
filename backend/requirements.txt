@@ -24,3 +24,5 @@ torchvision
 
 PyYAML
 requests
+argon2-cffi
+PyJWT

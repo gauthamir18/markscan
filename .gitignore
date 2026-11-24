@@ -61,3 +61,10 @@ frontend/.dart_tool/
 # Python/ML environments
 yolo-env/
 labelstudio-env/
+
+# Environment files (keep templates only)
+.env.*
+!.env.example
+backend/.env.*
+!backend/.env.example
+backend/data/students.csv

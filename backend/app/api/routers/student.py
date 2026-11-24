@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.database.connection import get_db
+from app.api.dependencies import get_current_user
 from app.models.student import Student
 from app.models.mark import Mark
 from app.models.test import Test
@@ -19,8 +20,11 @@ def get_student_profile_and_marks(
     roll_no: str,
     month: Optional[str] = Query(None, description="Month in YYYY-MM format"),
     db: Session = Depends(get_db),
+    current_user: dict = Depends(get_current_user),
 ):
     clean_roll = roll_no.strip()
+    if current_user["role"] == "student" and current_user["roll_no"].lower() != clean_roll.lower():
+        raise HTTPException(status_code=403, detail="You can only view your own student record.")
     student = db.query(Student).filter(Student.roll_no.ilike(clean_roll)).first()
     if not student:
         raise HTTPException(status_code=404, detail="Student not found")

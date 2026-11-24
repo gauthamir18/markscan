@@ -79,52 +79,8 @@ def auto_bootstrap_database():
 
     db = SessionLocal()
     try:
-        admin = db.query(Faculty).filter((Faculty.role.ilike("admin")) | (Faculty.email == "admin@markscan.edu")).first()
-        if not admin:
-            new_admin = Faculty(
-                name="Admin",
-                email="admin@markscan.edu",
-                password="admin",
-                role="admin"
-            )
-            db.add(new_admin)
-            db.commit()
-            print("🌱 Created initial admin account (admin / admin)")
-
-        if db.query(Student).count() == 0:
-            csv_path = Path(__file__).resolve().parent.parent / "data" / "students.csv"
-            if csv_path.exists():
-                with open(csv_path, mode="r", encoding="utf-8-sig") as f:
-                    reader = csv.DictReader(f)
-                    for row in reader:
-                        raw_name = (row.get("name") or "").strip()
-                        roll_no = (row.get("roll_no") or "").strip()
-                        class_name = (row.get("class") or "").strip().replace('"', '')
-                        board = (row.get("board") or "").strip()
-                        phone = (row.get("phone") or "").strip()
-                        email = (row.get("email") or "").strip()
-                        school = (row.get("school_name") or "").strip()
-                        pwd = (row.get("password") or "").strip().replace('"', '') or roll_no
-                        mode = (row.get("mode_of_education") or "Offline").strip()
-                        std_name = standardize_name(raw_name)
-                        rev_name = reverse_name_initials(raw_name)
-
-                        st = Student(
-                            roll_no=roll_no,
-                            name=raw_name,
-                            standardized_name=std_name,
-                            reversed_name=rev_name,
-                            class_name=class_name,
-                            board=board,
-                            phone=phone,
-                            email=email,
-                            school_name=school,
-                            password=pwd,
-                            mode_of_education=mode,
-                        )
-                        db.add(st)
-                db.commit()
-                print(f"🌱 Auto-seeded {db.query(Student).count()} students from students.csv")
+        # Admin accounts must be provisioned securely out-of-band. Never create a
+        # predictable default admin password during application startup.
 
         # 3. Bootstrap Tests from CSV if table is empty
         if db.query(Test).count() == 0:

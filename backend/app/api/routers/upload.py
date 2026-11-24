@@ -9,6 +9,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Depends
 from sqlalchemy.orm import Session
 
 from app.database.connection import SessionLocal
+from app.api.dependencies import require_staff
 from app.models.mark import Mark
 from app.models.student import Student
 from app.services.image_processor import process_image
@@ -154,7 +155,8 @@ def upload_image(
     test_code: Optional[str] = Form(None),
     subject: Optional[str] = Form(None),
     board: Optional[str] = Form(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_staff),
 ):
     if not file.filename:
         raise HTTPException(
@@ -422,7 +424,8 @@ def confirm_mark(
     marks: Optional[str] = Form(None),
     total: Optional[str] = Form(None),
     test_code: Optional[str] = Form(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_staff),
 ):
     if mark_id:
         entry = db.query(Mark).filter(Mark.id == mark_id).first()
@@ -464,7 +467,8 @@ class BatchSubmitRequest(BaseModel):
 @router.post("/submit_batch")
 def submit_batch(
     payload: BatchSubmitRequest,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: dict = Depends(require_staff),
 ):
     submitted_count = 0
     for it in payload.items:
