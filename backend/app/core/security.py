@@ -1,10 +1,14 @@
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import jwt
 from argon2 import PasswordHasher
 from argon2.exceptions import InvalidHashError, VerificationError, VerifyMismatchError
+
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 _password_hasher = PasswordHasher()
 
