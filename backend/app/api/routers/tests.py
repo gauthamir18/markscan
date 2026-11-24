@@ -1,8 +1,9 @@
 from typing import Optional
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Depends
 from sqlalchemy import text
 
 from app.database.connection import engine
+from app.api.dependencies import require_staff
 
 router = APIRouter(
     prefix="/tests",
@@ -15,6 +16,7 @@ def get_tests(
     class_name: Optional[str] = Query(None),
     board: Optional[str] = Query(None),
     subject: Optional[str] = Query(None),
+    current_user: dict = Depends(require_staff),
 ):
     query_str = """
         SELECT
