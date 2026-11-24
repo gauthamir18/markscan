@@ -1,0 +1,63 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual Environment
+backend/venv
+backend/venv/
+backend/venv_old/
+backend/venv_broken/
+yolo-env/
+labelstudio-env/
+
+# IDE
+.vscode/
+backend/.vscode/
+
+# Dataset zips & large files
+dataset/images.zip
+dataset_ocr/
+uploads/
+backend/uploads/
+backend/processed/
+backend/fields/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Flutter/Dart
+frontend/.dart_tool/
+frontend/build/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.metadata
+
+# IDE / OS
+.DS_Store
+
+# Runtime/generated files
+backend/uploads/
+runs/
+backend/runs/
+!backend/runs/detect/markscan_seal_v2/weights/best.pt
+
+# Local secrets
+.env
+backend/.env
+backend/credentials.json
+backend/service_account.json
+backend/token.json
+
+# Large/local backups and generated ML files
+frontend/android_backup/
+project-1-at-2026-08-22-10-14-f8badadd.zip
+
+# Flutter generated/build files
+frontend/build/
+frontend/.dart_tool/
+
+# Python/ML environments
+yolo-env/
+labelstudio-env/
